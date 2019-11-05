@@ -446,8 +446,9 @@ def lockin():
         return redirect(url_for('.index'))
 
 
-app = Flask(__name__, static_url_path=functions.APP_BASE_URL or '' + '/static')
+app = Flask(__name__, static_url_path=(functions.APP_BASE_URL or '') + '/static')
 app.register_blueprint(app_blueprint)
+print(app.url_map)
 
 
 if __name__ == '__main__':
