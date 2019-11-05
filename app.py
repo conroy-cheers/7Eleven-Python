@@ -20,6 +20,7 @@
 
 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask.blueprints import Blueprint
 
 # Optional Security
 # Uncomment Basic Auth section to enable basic authentication so users will be prompted a username and password before seeing the website.
@@ -56,8 +57,9 @@ if(os.getenv('DEVICE_ID', settings.DEVICE_ID) in [None,"changethis",""]):
     print("Note: You have not set a device ID. A random one will be set when you login.")
 
 
+app_blueprint = Blueprint('7eleven', __name__, template_folder='templates', url_prefix=functions.APP_BASE_URL,
+                          static_url_path=functions.APP_BASE_URL or '' + '/static')
 
-app = Flask(__name__)
 
 # Uncomment to enable basic authentication
 #app.config['BASIC_AUTH_FORCE'] = True
@@ -65,7 +67,7 @@ app = Flask(__name__)
 #app.config['BASIC_AUTH_PASSWORD'] = 'lockit'
 #basic_auth = BasicAuth(app)
 
-@app.route('/')
+@app_blueprint.route('/')
 def index():
 
     # If they have pressed the refresh link remove the error and success messages
@@ -99,7 +101,7 @@ def index():
 
 
 
-@app.route('/login', methods=['POST', 'GET'])
+@app_blueprint.route('/login', methods=['POST', 'GET'])
 def login():
     # Clear the error and success message
     session.pop('ErrorMessage', None)
@@ -144,7 +146,7 @@ def login():
             # If there was an error logging in, redirect to the index page with the 7Eleven response
             if(returnContent['Message']):
                 session['ErrorMessage'] = returnContent['Message']
-                return redirect(url_for('index'))
+                return redirect(url_for('.index'))
 
         except:
 
@@ -195,13 +197,13 @@ def login():
             with open('./autolock.ini', 'w') as configfile:
                 config.write(configfile)
 
-            return redirect(url_for('index'))
+            return redirect(url_for('.index'))
     else:
         # They didn't submit a POST request, so we will redirect to index
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
 
 
-@app.route('/logout')
+@app_blueprint.route('/logout')
 def logout():
 
     # The logout payload is an empty string but it is still needed
@@ -223,10 +225,10 @@ def logout():
     # Clear all of the previously set session variables and then redirect to the index page
     session.clear()
 
-    return redirect(url_for('index'))
+    return redirect(url_for('.index'))
 
 # The confirmation page for a manual lock in
-@app.route('/confirm')
+@app_blueprint.route('/confirm')
 def confirm():
     # See if we have a temporary lock in price
     try:
@@ -236,11 +238,11 @@ def confirm():
     except:
         # We haven't started locking in yet, show an error and redirect to the index
         session['ErrorMessage'] = "You haven't started the lock in process yet. Please try again."
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
 
 
 # Save the auto lock in settings
-@app.route('/save_settings',  methods=['POST'])
+@app_blueprint.route('/save_settings',  methods=['POST'])
 def save_settings():
     # If we have sent the form
     if request.method == 'POST':
@@ -259,18 +261,18 @@ def save_settings():
             config.set('General', 'max_price', request.form['max_price'])
         else:
             session['ErrorMessage'] = "The price you tried to lock in was either too cheap or too expensive. It should be between 100 and 200cents"
-            return redirect(url_for('index'))
+            return redirect(url_for('.index'))
         # Save the config file
         with open('./autolock.ini', 'w') as configfile:
             config.write(configfile)
 
         session['SuccessMessage'] = "Settings saved succesfully."
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
 
 
 
 
-@app.route('/lockin',  methods=['POST', 'GET'])
+@app_blueprint.route('/lockin',  methods=['POST', 'GET'])
 def lockin():
     if request.method == 'POST':
         # Variable used to search for a manual price
@@ -295,7 +297,7 @@ def lockin():
             # They tried to do something different from the manual and automatic form, so throw up an error
             if(submissionMethod != "manual" and submissionMethod != "automatic"):
                 session['ErrorMessage'] = "Invalid form submission. Either use the manual or automatic one on the main page."
-                return redirect(url_for('index'))
+                return redirect(url_for('.index'))
 
             # If they have manually chosen a postcode/suburb set the price overide to true
             if(submissionMethod == "manual"):
@@ -316,7 +318,7 @@ def lockin():
                     if not custom_coords:
                         # If it is, get the error message and return back to the index
                         session['ErrorMessage'] = "Error: You entered a manual postcode where no 7-Eleven store is. Please set a Google Maps API key or enter a valid postcode."
-                        return redirect(url_for('index'))
+                        return redirect(url_for('.index'))
                     # Initiate the Google Maps API
                     gmaps = googlemaps.Client(key = API_KEY)
                     # Get the longitude and latitude from the submitted postcode
@@ -360,7 +362,7 @@ def lockin():
             try:
               if returnContent['ErrorType'] == 0:
                   session['ErrorMessage'] = "An error has occured. This is most likely due to a fuel lock already being in place."
-                  return redirect(url_for('index'))
+                  return redirect(url_for('.index'))
             except:
                 pass
 
@@ -379,10 +381,10 @@ def lockin():
             if not(priceOveride):
                 if not(float(LockinPrice) <= float(locationResult[1])):
                     session['ErrorMessage'] = "The fuel price is too high compared to the cheapest available. The cheapest we found was at " + locationResult[0] + ". Try locking in there!"
-                    return redirect(url_for('index'))
+                    return redirect(url_for('.index'))
 
             if(priceOveride):
-                return redirect(url_for('confirm'))
+                return redirect(url_for('.confirm'))
 
         # Now we want to lock in the maximum litres we can.
         NumberOfLitres = int(float(session['cardBalance']) / session['LockinPrice'] * 100)
@@ -412,7 +414,7 @@ def lockin():
             if(returnContent['Message']):
                 # If it is, get the error message and return back to the index
                 session['ErrorMessage'] = returnContent['Message']
-                return redirect(url_for('index'))
+                return redirect(url_for('.index'))
             # Otherwise we most likely locked in the price!
             if(returnContent['Status'] == "0"):
                 # Update the fuel prices that are locked in
@@ -424,7 +426,7 @@ def lockin():
                 # Pop our fueltype and lock in price variables
                 session.pop('fuelType', None)
                 session.pop('LockinPrice', None)
-                return redirect(url_for('index'))
+                return redirect(url_for('.index'))
 
         # For whatever reason it saved our lock in anyway and return to the index page
         except:
@@ -437,11 +439,16 @@ def lockin():
             # Pop our fueltype and lock in price variables
             session.pop('fuelType', None)
             session.pop('LockinPrice', None)
-            return redirect(url_for('index'))
+            return redirect(url_for('.index'))
     else:
         # They just tried to load the lock in page without sending any data
         session['ErrorMessage'] = "Unknown error occured. Please try again!"
-        return redirect(url_for('index'))
+        return redirect(url_for('.index'))
+
+
+app = Flask(__name__, static_url_path=functions.APP_BASE_URL or '' + '/static')
+app.register_blueprint(app_blueprint)
+
 
 if __name__ == '__main__':
     # Try and open stores.json
@@ -475,7 +482,7 @@ if __name__ == '__main__':
     # Check if the autolock.ini file exists, if it doesn't create it.
     if not (os.path.exists("./autolock.ini")):
         autolocker.create_ini()
-        
+
     # Open the config file and read the settings
     config = configparser.ConfigParser()
     config.read("./autolock.ini")

@@ -43,6 +43,9 @@ DEVICE_NAME = os.getenv('DEVICE_NAME', settings.DEVICE_NAME)
 OS_VERSION = os.getenv('OS_VERSION', settings.OS_VERSION)
 APP_VERSION = os.getenv('APP_VERSION', settings.APP_VERSION)
 
+# Base URL for app. e.g. APP_BASE_URL='/7eleven' will put the index page at /7eleven/index instead of /index
+APP_BASE_URL = os.getenv('APP_BASE_URL', '').rstrip('/') or None
+
 def getKey():
     # Found in file au.com.seveneleven.y.h
     a = [103, 180, 267, 204, 390, 504, 497, 784, 1035, 520, 1155, 648, 988, 1456, 1785]

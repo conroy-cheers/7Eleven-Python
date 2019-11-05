@@ -93,7 +93,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
                          </div>
                          <div class="pic_info">
                              <h2>Please enter your email and password below:<br><br></h2>
-														 <form class="form-inline mt-2 mt-md-0" action="/login" method="POST">
+														 <form class="form-inline mt-2 mt-md-0" action="{{ url_for('.login') }}" method="POST">
 															 <input class="form-control mr-sm-2" type="username" placeholder="Email" name="email"><br><br>
 															 <input class="form-control mr-sm-2" type="password" placeholder="Password"  name="password"><br><br>
 															 <input class="form-control mr-sm-2" type="text" placeholder="Device ID (can be blank)" value="{{ device_id }}" maxlength="16"  name="device_id"><br><br>
@@ -121,7 +121,7 @@ License URL: http://creativecommons.org/licenses/by/3.0/
 			 </div>
         {% if session['accountID'] %}
             <div class="text-center">
-                <a href="/logout" class="text-danger">
+                <a href="{{ url_for('.logout') }}" class="text-danger">
                     <span>LOGOUT</span> <span class="glyphicon glyphicon-log-out" aria-hidden="true"></span>
                 </a>
             </div>
